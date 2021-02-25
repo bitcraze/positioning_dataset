@@ -1,0 +1,9 @@
+100   # frequency
+50    # buffer size
+log   # file name
+0     # enable on startup (0/1)
+1     # mode (0: disabled, 1: synchronous stabilizer, 2: asynchronous)
+gyro.z
+lighthouse.x
+lighthouse.y
+lighthouse.z
