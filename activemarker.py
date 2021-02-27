@@ -62,7 +62,7 @@ if __name__ == '__main__':
         cf = scf.cf
 
         # enable active marker deck
-        cf.param.set_value('activeMarker.mode', 2)
+        cf.param.set_value('activeMarker.mode', 0)
         cf.param.set_value('activeMarker.front', INTENSITY)
         cf.param.set_value('activeMarker.back', INTENSITY)
         cf.param.set_value('activeMarker.left', INTENSITY)
