@@ -38,6 +38,8 @@ from cflib.crazyflie.syncLogger import SyncLogger
 from cflib.utils.power_switch import PowerSwitch
 from cflib.positioning.position_hl_commander import PositionHlCommander
 
+from qtm_thread import QtmThread
+
 URI = 'radio://0/60/2M/E7E7E7E7E7'
 INTENSITY = 50
 
@@ -61,7 +63,7 @@ if __name__ == '__main__':
     with SyncCrazyflie(URI) as scf:
         cf = scf.cf
 
-        # enable active marker deck
+        # configure active marker deck
         cf.param.set_value('activeMarker.mode', 0)
         cf.param.set_value('activeMarker.front', INTENSITY)
         cf.param.set_value('activeMarker.back', INTENSITY)
@@ -88,13 +90,20 @@ if __name__ == '__main__':
         # enable lighthouse crossing beam method
         cf.param.set_value('lighthouse.method', 0)
 
+        # start logging motion capture data
+        qtmThread = QtmThread(None)
+
         # start logging in uSD card
         cf.param.set_value('usd.logging', 1)
         time.sleep(2)
 
-        # auto-flicking
-        cf.param.set_value('health.startFlick', 1)
-        time.sleep(1)
+        # enable active marker deck
+        cf.param.set_value('activeMarker.mode', 1)
+        time.sleep(2)
+
+        # # auto-flicking
+        # cf.param.set_value('health.startFlick', 1)
+        # time.sleep(1)
 
         with PositionHlCommander(scf,default_velocity=0.25) as pc:
             pc.forward(1.0)
@@ -106,3 +115,6 @@ if __name__ == '__main__':
         # stop logging in uSD card
         cf.param.set_value('usd.logging', 0)
         time.sleep(1)
+
+        # stop mocap data collection
+        qtmThread.close()
