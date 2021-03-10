@@ -30,6 +30,7 @@ Change the URI variable to your Crazyflie configuration.
 """
 import logging
 import time
+import numpy as np
 
 import cflib.crtp
 from cflib.crazyflie.log import LogConfig
@@ -104,13 +105,19 @@ if __name__ == '__main__':
         # # auto-flicking
         # cf.param.set_value('health.startFlick', 1)
         # time.sleep(1)
+        x_min = -0.5
+        x_max = 1.0
+        y_min = -1.0
+        y_max = 0.5
+        delta = 0.25
 
-        with PositionHlCommander(scf,default_velocity=0.25) as pc:
-            pc.forward(1.0)
-            # pc.left(1.0)
-            pc.back(1.0)
-            # pc.go_to(0.0, 0.0, 1.0)
-
+        with PositionHlCommander(scf,default_velocity=0.5) as pc:
+            # sweeping pattern
+            for y in np.arange(y_min, y_max, 2*delta):
+                pc.go_to(x_min, y)
+                pc.go_to(x_max, y)
+                pc.go_to(x_max, y+delta)
+                pc.go_to(x_min, y+delta)
 
         # stop logging in uSD card
         cf.param.set_value('usd.logging', 0)

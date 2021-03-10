@@ -41,6 +41,7 @@ class QtmThread(Thread):
         # self.connection = None
         # self.qtm_6DoF_labels = []
         self._stay_open = True
+        self._has_ever_received_markers = False
 
         self._f = open(filename, "w")
         self._f.write("time[ms],x[m],y[m],z[m]\n")
@@ -91,8 +92,10 @@ class QtmThread(Thread):
             a /= 1000
             pos = np.mean(a, axis=0)
             self._f.write("{},{},{},{}\n".format(packet.timestamp / 1000, pos[0], pos[1], pos[2]))
+            self._has_ever_received_markers = True
         else:
-            print("Warning: only {} markers visible!".format(len(markers)))
+            if self._has_ever_received_markers:
+                print("Warning: only {} markers visible!".format(len(markers)))
 
     async def _close(self):
         await self.connection.stream_frames_stop()
