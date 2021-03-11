@@ -47,6 +47,9 @@ INTENSITY = 50
 # Only output errors from the logging framework
 logging.basicConfig(level=logging.ERROR)
 
+def consoleReceived(data):
+    print(data)
+
 
 if __name__ == '__main__':
     # Initialize the low-level drivers (don't list the debug drivers)
@@ -63,6 +66,8 @@ if __name__ == '__main__':
 
     with SyncCrazyflie(URI) as scf:
         cf = scf.cf
+
+        cf.console.receivedChar.add_callback(consoleReceived)
 
         # configure active marker deck
         cf.param.set_value('activeMarker.mode', 0)
@@ -119,9 +124,15 @@ if __name__ == '__main__':
                 pc.go_to(x_max, y+delta)
                 pc.go_to(x_min, y+delta)
 
+        # time.sleep(60)
+
+        # disable active marker deck
+        cf.param.set_value('activeMarker.mode', 0)
+        time.sleep(1)
+
         # stop logging in uSD card
         cf.param.set_value('usd.logging', 0)
-        time.sleep(1)
+        time.sleep(2)
 
         # stop mocap data collection
         qtmThread.close()

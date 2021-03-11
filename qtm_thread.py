@@ -41,7 +41,7 @@ class QtmThread(Thread):
         # self.connection = None
         # self.qtm_6DoF_labels = []
         self._stay_open = True
-        self._has_ever_received_markers = False
+        # self._has_ever_received_markers = False
 
         self._f = open(filename, "w")
         self._f.write("time[ms],x[m],y[m],z[m]\n")
@@ -70,7 +70,7 @@ class QtmThread(Thread):
         self.connection = await qtm.connect(self.host)
 
         await self.connection.stream_frames(
-            components=['3dnolabels'],
+            components=['3dnolabels', '2d'],
             on_packet=self._on_packet)
 
     async def _discover(self):
@@ -80,22 +80,26 @@ class QtmThread(Thread):
     def _on_packet(self, packet):
         # print("Framenumber: {}".format(packet.framenumber))
         # print(packet.timestamp)
-        header, markers = packet.get_3d_markers_no_label()
+        header, markers3d = packet.get_3d_markers_no_label()
         # header, markers = packet.get_3d_markers()
         # print("Component info: {}".format(header))
         # for marker in markers:
             # print("\t", marker)
-        if len(markers) == 4:
+        if len(markers3d) == 4:
             a = np.empty((4,3))
-            for i, marker in enumerate(markers):
+            for i, marker in enumerate(markers3d):
                 a[i] = [marker.x, marker.y, marker.z]
             a /= 1000
             pos = np.mean(a, axis=0)
             self._f.write("{},{},{},{}\n".format(packet.timestamp / 1000, pos[0], pos[1], pos[2]))
-            self._has_ever_received_markers = True
+            # self._has_ever_received_markers = True
         else:
-            if self._has_ever_received_markers:
-                print("Warning: only {} markers visible!".format(len(markers)))
+            _, markers2d = packet.get_2d_markers()
+            num_markers2d = sum([len(m) for m in markers2d])
+            if num_markers2d > 0:
+                self._f.write("{},{},{},{}\n".format(packet.timestamp / 1000, np.nan, np.nan, np.nan))
+                # if self._has_ever_received_markers:
+                print("Warning: only {} markers visible!".format(len(markers3d)))
 
     async def _close(self):
         await self.connection.stream_frames_stop()

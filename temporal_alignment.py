@@ -33,7 +33,17 @@ if __name__ == "__main__":
     while True:
         # find start of usd log for alignment
         assert(data_usd['activeMarkerModeChanged']['mode'][0] == 1)
+        assert(data_usd['activeMarkerModeChanged']['mode'][1] == 0)
         cf_start_time = data_usd['activeMarkerModeChanged']['timestamp'][0] + time_offset_ms
+        cf_end_time = data_usd['activeMarkerModeChanged']['timestamp'][1] + time_offset_ms
+        cf_duration = (cf_end_time - cf_start_time) / 1000
+        mocap_duration = time_mocap[-1]
+        print(mocap_duration, cf_duration)
+        # assert(abs(mocap_duration - cf_duration) < 0.02)
+        # print(cf_start_time, cf_end_time, cf_end_time - cf_start_time)
+        # print(data_mocap[:,0] - data_mocap[0,0])
+        # exit()
+
         # time_fixedFrequency = (np.array(data_usd['fixedFrequency']['timestamp']) - cf_start_time) / 1000
         # idx = np.argwhere(time_fixedFrequency > 0)[0][0] + time_offset
 
@@ -56,10 +66,12 @@ if __name__ == "__main__":
         # compute spatial alignment
         # R, t = compute_rigid_transform(pos_usd[sensorsUsed > 0], pos_mocap_merged[sensorsUsed > 0])
         # print(pos_usd.shape, pos_mocap_merged.shape)
-        R, t = compute_rigid_transform(pos_usd, pos_mocap_merged)
+        valid = ~np.isnan(pos_mocap_merged).any(axis=1)
+        R, t = compute_rigid_transform(pos_usd[valid], pos_mocap_merged[valid])
         pos_usd = pos_usd @ R.T + t
 
-        error = np.mean(np.linalg.norm(pos_usd - pos_mocap_merged, axis=1))
+        error = np.mean(np.linalg.norm(pos_usd[valid] - pos_mocap_merged[valid], axis=1))
+        print(time_offset_ms, error)
         if done:
             break
         if error < best_error:
@@ -77,21 +89,24 @@ if __name__ == "__main__":
 
     ax[0].scatter(time_usd, pos_usd[:,0], label='LH')
     ax[0].plot(time_mocap, pos_mocap[:,0], 'g-', label='Mocap')
-    # plt.plot(time_usd, pos_usd[:,0] - pos_mocap_merged[:,0], '-', label='error')
+    ax2 = ax[0].twinx()
+    ax2.plot(time_usd, pos_usd[:,0] - pos_mocap_merged[:,0], 'r', label='error')
     ax[0].set_xlabel('Time [s]')
     ax[0].set_ylabel('X [m]')
     ax[0].legend(loc=9, ncol=3, borderaxespad=0.)
 
     ax[1].scatter(time_usd, pos_usd[:,1], label='LH')
     ax[1].plot(time_mocap, pos_mocap[:,1], 'g-', label='Mocap')
-    # ax[1].plot(time_usd, pos_usd[:,1] - pos_mocap_merged[:,1], '-', label='error')
+    ax2 = ax[1].twinx()
+    ax2.plot(time_usd, pos_usd[:,1] - pos_mocap_merged[:,1], 'r', label='error')
     ax[1].set_xlabel('Time [s]')
     ax[1].set_ylabel('Y [m]')
     ax[1].legend(loc=9, ncol=3, borderaxespad=0.)
 
     ax[2].scatter(time_usd, pos_usd[:,2], label='LH')
     ax[2].plot(time_mocap, pos_mocap[:,2], 'g-', label='Mocap')
-    # ax[2].plot(time_usd, pos_usd[:,2] - pos_mocap_merged[:,2], '-', label='error')
+    ax2 = ax[2].twinx()
+    ax2.plot(time_usd, pos_usd[:,2] - pos_mocap_merged[:,2], 'r', label='error')
     ax[2].set_xlabel('Time [s]')
     ax[2].set_ylabel('Z [m]')
     ax[2].legend(loc=9, ncol=3, borderaxespad=0.)
@@ -117,7 +132,7 @@ if __name__ == "__main__":
 
     error = np.linalg.norm(pos_usd - pos_mocap_merged, axis=1)
     ax[4].scatter(time_usd, error, label='LH')
-    print("Euc. Error: Avg: {} Max: {}".format(np.mean(error), np.max(error)))
+    print("Euc. Error: Avg: {} Max: {}".format(np.mean(error[valid]), np.max(error[valid])))
 
     # time = (np.array(data_usd['fixedFrequency']['timestamp']) - cf_start_time) / 1000
     # idx = np.argwhere(time > 0)[0][0]
