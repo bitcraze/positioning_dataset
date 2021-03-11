@@ -9,6 +9,67 @@ import argparse
 import numpy as np
 from rigid_transform import compute_rigid_transform
 
+def process(time_offset_start, time_offset_end):
+    global error
+    global time_usd
+    global pos_usd
+    global pos_mocap_merged
+    global cf_start_time
+    global time_scale
+    global valid
+    global delta
+
+    # find start of usd log for alignment
+    assert(data_usd['activeMarkerModeChanged']['mode'][0] == 1)
+    assert(data_usd['activeMarkerModeChanged']['mode'][1] == 0)
+    cf_start_time = data_usd['activeMarkerModeChanged']['timestamp'][0] + time_offset_start
+    cf_end_time = data_usd['activeMarkerModeChanged']['timestamp'][1] + time_offset_end
+    cf_duration = cf_end_time - cf_start_time
+    mocap_duration = time_mocap[-1] * 1000
+    time_scale = mocap_duration / cf_duration
+    # print(mocap_duration, cf_duration, time_scale)
+    # exit()
+    # assert(abs(mocap_duration - cf_duration) < 0.02)
+    # print(cf_start_time, cf_end_time, cf_end_time - cf_start_time)
+    # print(data_mocap[:,0] - data_mocap[0,0])
+    # exit()
+
+    # time_fixedFrequency = (np.array(data_usd['fixedFrequency']['timestamp']) - cf_start_time) / 1000
+    # idx = np.argwhere(time_fixedFrequency > 0)[0][0] + time_offset
+
+    # extract raw data
+    t = np.array(data_usd['lhCrossingBeam']['timestamp'])
+    idx = np.argwhere(t >= cf_start_time)[0][0]
+    idxEnd = np.argwhere(t >= cf_end_time)
+    if len(idxEnd) > 0:
+        idxEnd = idxEnd[0][0]
+    else:
+        idxEnd = -1
+    time_usd = (t - cf_start_time) / 1000 * time_scale
+    time_usd = time_usd[idx:idxEnd]
+    pos_usd = np.stack((
+        data_usd['lhCrossingBeam']['x'][idx:idxEnd],
+        data_usd['lhCrossingBeam']['y'][idx:idxEnd],
+        data_usd['lhCrossingBeam']['z'][idx:idxEnd]), axis=1)
+    delta = data_usd['lhCrossingBeam']['delta'][idx:idxEnd]
+
+    # merge dataset by interpolating mocap data
+    pos_mocap_merged = np.stack((
+        np.interp(time_usd, time_mocap, pos_mocap[:,0]),
+        np.interp(time_usd, time_mocap, pos_mocap[:,1]),
+        np.interp(time_usd, time_mocap, pos_mocap[:,2])), axis=1)
+
+
+    # compute spatial alignment
+    # R, t = compute_rigid_transform(pos_usd[sensorsUsed > 0], pos_mocap_merged[sensorsUsed > 0])
+    # print(pos_usd.shape, pos_mocap_merged.shape)
+    valid = ~np.isnan(pos_mocap_merged).any(axis=1)
+    R, t = compute_rigid_transform(pos_usd[valid], pos_mocap_merged[valid])
+    pos_usd = pos_usd @ R.T + t
+
+    error = np.mean(np.linalg.norm(pos_usd[valid] - pos_mocap_merged[valid], axis=1))
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("file_usd")
@@ -21,68 +82,36 @@ if __name__ == "__main__":
 
     # read mocap data
     # start of mocap alignment is zero, since that is the first frame we get data
-    data_mocap = np.loadtxt(args.file_mocap, delimiter=',', skiprows=1, ndmin=2)
+    # data_mocap = np.loadtxt(args.file_mocap, delimiter=',', skiprows=1, ndmin=2)
+    data_mocap = np.load(args.file_mocap)
     time_mocap = (data_mocap[:,0] - data_mocap[0,0])/1000
     pos_mocap = data_mocap[:,1:4]
 
     # to fine tune the time difference between PC and CF
-    best_time_offset = None
+    best_time_offset_start = None
+    best_time_offset_end = None
     best_error = np.inf
-    time_offset_ms = -100
-    done = False
-    while True:
-        # find start of usd log for alignment
-        assert(data_usd['activeMarkerModeChanged']['mode'][0] == 1)
-        assert(data_usd['activeMarkerModeChanged']['mode'][1] == 0)
-        cf_start_time = data_usd['activeMarkerModeChanged']['timestamp'][0] + time_offset_ms
-        cf_end_time = data_usd['activeMarkerModeChanged']['timestamp'][1] + time_offset_ms
-        cf_duration = (cf_end_time - cf_start_time) / 1000
-        mocap_duration = time_mocap[-1]
-        print(mocap_duration, cf_duration)
-        # assert(abs(mocap_duration - cf_duration) < 0.02)
-        # print(cf_start_time, cf_end_time, cf_end_time - cf_start_time)
-        # print(data_mocap[:,0] - data_mocap[0,0])
-        # exit()
+    # time_offset_ms = -100
+    # done = False
+    # while True:
+    for time_offset_start in np.arange(-100,100,5):
+        for time_offset_end in np.arange(-100,100,5):
+            process(time_offset_start, time_offset_end)
+            # print(time_offset_ms, error)
+            # if done:
+                # break
+            if error < best_error:
+                best_error = error
+                best_time_offset_start = time_offset_start
+                best_time_offset_end = time_offset_end
+                print(best_error, best_time_offset_start, best_time_offset_end)
+            # time_offset_ms += 5
+            # if time_offset_ms > 100:
+                # time_offset_ms = best_time_offset
+                # done = True
 
-        # time_fixedFrequency = (np.array(data_usd['fixedFrequency']['timestamp']) - cf_start_time) / 1000
-        # idx = np.argwhere(time_fixedFrequency > 0)[0][0] + time_offset
-
-        # extract raw data
-        time_usd = (np.array(data_usd['estimatorEnqueuePosition']['timestamp']) - cf_start_time) / 1000
-        idx = np.argwhere(time_usd > 0)[0][0]
-        time_usd = time_usd[idx:]
-        pos_usd = np.stack((
-            data_usd['estimatorEnqueuePosition']['x'][idx:],
-            data_usd['estimatorEnqueuePosition']['y'][idx:],
-            data_usd['estimatorEnqueuePosition']['z'][idx:]), axis=1)
-
-        # merge dataset by interpolating mocap data
-        pos_mocap_merged = np.stack((
-            np.interp(time_usd, time_mocap, pos_mocap[:,0]),
-            np.interp(time_usd, time_mocap, pos_mocap[:,1]),
-            np.interp(time_usd, time_mocap, pos_mocap[:,2])), axis=1)
-
-
-        # compute spatial alignment
-        # R, t = compute_rigid_transform(pos_usd[sensorsUsed > 0], pos_mocap_merged[sensorsUsed > 0])
-        # print(pos_usd.shape, pos_mocap_merged.shape)
-        valid = ~np.isnan(pos_mocap_merged).any(axis=1)
-        R, t = compute_rigid_transform(pos_usd[valid], pos_mocap_merged[valid])
-        pos_usd = pos_usd @ R.T + t
-
-        error = np.mean(np.linalg.norm(pos_usd[valid] - pos_mocap_merged[valid], axis=1))
-        print(time_offset_ms, error)
-        if done:
-            break
-        if error < best_error:
-            best_error = error
-            best_time_offset = time_offset_ms
-        time_offset_ms += 5
-        if time_offset_ms > 100:
-            time_offset_ms = best_time_offset
-            done = True
-
-    print("Found time offset: ", time_offset_ms)
+    print("Found time offset: ", best_time_offset_start, best_time_offset_end)
+    process(best_time_offset_start, best_time_offset_end)
 
     # new figure
     fig, ax = plt.subplots(5,1,sharex=True)
@@ -119,19 +148,21 @@ if __name__ == "__main__":
     # ax2.set_ylabel('LH Delta')
     # plt.xlabel('Time [s]')
 
-    t = (np.array(data_usd['lhAngle']['timestamp']) - cf_start_time) / 1000
+    t = (np.array(data_usd['lhAngle']['timestamp']) - cf_start_time) / 1000 * time_scale
     num_sensors = 4
     num_lh = 2
     num_sweeps = 2
     d = np.array(data_usd['lhAngle']['sensor']) * num_lh * num_sweeps + \
         np.array(data_usd['lhAngle']['basestation']) * num_sweeps + \
         np.array(data_usd['lhAngle']['sweep'])
-    idx = np.argwhere(t > 0)[0][0] + 4
+    idx = np.argwhere(t > 0)[0][0]
     ax[3].scatter(t[idx:], d[idx:])
     ax[3].set_ylabel('# Received LH Angle From ID')
 
     error = np.linalg.norm(pos_usd - pos_mocap_merged, axis=1)
     ax[4].scatter(time_usd, error, label='LH')
+    ax2 = ax[4].twinx()
+    ax2.plot(time_usd, delta, 'r.')
     print("Euc. Error: Avg: {} Max: {}".format(np.mean(error[valid]), np.max(error[valid])))
 
     # time = (np.array(data_usd['fixedFrequency']['timestamp']) - cf_start_time) / 1000
@@ -175,4 +206,16 @@ if __name__ == "__main__":
     # plt.ylabel('yaw [deg]')
     # plt.legend(loc=9, ncol=3, borderaxespad=0.)
 
+    plt.show()
+
+    #
+    from mpl_toolkits.mplot3d import Axes3D
+    from matplotlib import cm
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    p3d = ax.scatter(pos_mocap_merged[valid,0], pos_mocap_merged[valid,1], pos_mocap_merged[valid,2], s=30, c=error[valid], cmap = cm.coolwarm)
+    ax.set_xlabel('X [m]')
+    ax.set_ylabel('Y [m]')
+    ax.set_zlabel('Z [m]')
+    fig.colorbar(p3d, label='Euclidean Error [m]')
     plt.show()
