@@ -33,7 +33,7 @@ import qtm
 
 
 class QtmThread(Thread):
-    def __init__(self, host=None, filename='mocap.csv'):
+    def __init__(self, host=None, filename='mocap.npy'):
         Thread.__init__(self)
 
         self.host = host
@@ -41,17 +41,31 @@ class QtmThread(Thread):
         # self.connection = None
         # self.qtm_6DoF_labels = []
         self._stay_open = True
-        # self._has_ever_received_markers = False
-
-        self._f = open(filename, "w")
-        self._f.write("time[ms],x[m],y[m],z[m]\n")
+        self._start_time = None
+        self._end_time = None
+        self._data = []
+        self._filename = filename
+        self._framenumber = None
+        # self._f = open(filename, "w")
+        # self._f.write("time[ms],x[m],y[m],z[m]\n")
 
         self.start()
 
     def close(self):
         self._stay_open = False
         self.join()
-        self._f.close()
+
+        # compare camera time and wall-clock time
+        wall_clock_duration = (self._end_time - self._start_time) * 1000
+        data = np.array(self._data)
+        camera_duration = data[-1,0] - data[0,0]
+        print("Wall clock duration: {} ms; camera duration: {} ms; diff: {} ms".format(
+            wall_clock_duration,
+            camera_duration,
+            wall_clock_duration - camera_duration))
+
+        # write output file
+        np.save(self._filename, data)
 
     def run(self):
         asyncio.run(self._life_cycle())
@@ -78,6 +92,9 @@ class QtmThread(Thread):
             return qtm_instance
 
     def _on_packet(self, packet):
+        if self._framenumber is not None and self._framenumber + 1 != packet.framenumber:
+            print("Warning: Skipped a frame!", self._framenumber, packet.framenumber)
+        self._framenumber = packet.framenumber
         # print("Framenumber: {}".format(packet.framenumber))
         # print(packet.timestamp)
         header, markers3d = packet.get_3d_markers_no_label()
@@ -91,19 +108,28 @@ class QtmThread(Thread):
                 a[i] = [marker.x, marker.y, marker.z]
             a /= 1000
             pos = np.mean(a, axis=0)
-            self._f.write("{},{},{},{}\n".format(packet.timestamp / 1000, pos[0], pos[1], pos[2]))
+            self._data.append([packet.timestamp / 1000, pos[0], pos[1], pos[2]])
+            if self._start_time is None:
+                self._start_time = time.time()
+            self._end_time = time.time()
+            # self._f.write("{},{},{},{}\n".format(packet.timestamp / 1000, pos[0], pos[1], pos[2]))
             # self._has_ever_received_markers = True
         else:
             _, markers2d = packet.get_2d_markers()
             num_markers2d = sum([len(m) for m in markers2d])
             if num_markers2d > 0:
-                self._f.write("{},{},{},{}\n".format(packet.timestamp / 1000, np.nan, np.nan, np.nan))
+                self._data.append([packet.timestamp / 1000, np.nan, np.nan, np.nan])
+                if self._start_time is None:
+                    self._start_time = time.time()
+                self._end_time = time.time()
+                # self._f.write("{},{},{},{}\n".format(packet.timestamp / 1000, np.nan, np.nan, np.nan))
                 # if self._has_ever_received_markers:
                 print("Warning: only {} markers visible!".format(len(markers3d)))
 
     async def _close(self):
         await self.connection.stream_frames_stop()
         self.connection.disconnect()
+
 
 if __name__ == '__main__':
     # Connect to QTM

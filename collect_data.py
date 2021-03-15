@@ -31,6 +31,7 @@ Change the URI variable to your Crazyflie configuration.
 import logging
 import time
 import numpy as np
+import argparse
 
 import cflib.crtp
 from cflib.crazyflie.log import LogConfig
@@ -43,15 +44,26 @@ from qtm_thread import QtmThread
 
 URI = 'radio://0/60/2M/E7E7E7E7E7'
 INTENSITY = 50
-
-# Only output errors from the logging framework
-logging.basicConfig(level=logging.ERROR)
+usdCanLog = False
 
 def consoleReceived(data):
-    print(data)
+    print(data, end='')
+
+
+def paramReceived(name, value):
+    if name == "usd.canLog":
+        usdCanLog = int(value)
+    print(name, value)
 
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument("file_mocap")
+    args = parser.parse_args()
+
+    # Only output errors from the logging framework
+    logging.basicConfig(level=logging.ERROR)
+
     # Initialize the low-level drivers (don't list the debug drivers)
     cflib.crtp.init_drivers(enable_debug_driver=False)
 
@@ -64,10 +76,14 @@ if __name__ == '__main__':
     lg.add_variable('pm.vbat', 'float')
     lg.add_variable('lighthouse.status', 'uint8_t')
 
-    with SyncCrazyflie(URI) as scf:
-        cf = scf.cf
+    cf = cflib.crazyflie.Crazyflie()
+    cf.console.receivedChar.add_callback(consoleReceived)
 
-        cf.console.receivedChar.add_callback(consoleReceived)
+    with SyncCrazyflie(URI, cf) as scf:
+
+        # check usd Deck
+        cf.param.add_update_callback(group='usd', name='canLog', cb=paramReceived)
+        cf.param.request_param_update('usd.canLog')
 
         # configure active marker deck
         cf.param.set_value('activeMarker.mode', 0)
@@ -93,11 +109,15 @@ if __name__ == '__main__':
         if lhStatus != 2:
             exit("LightHouse not working!")
 
+        if usdCanLog != 0:
+            exit("Can't log to USD!")
+
+
         # enable lighthouse crossing beam method
         cf.param.set_value('lighthouse.method', 0)
 
         # start logging motion capture data
-        qtmThread = QtmThread(None)
+        qtmThread = QtmThread(None, args.file_mocap)
 
         # start logging in uSD card
         cf.param.set_value('usd.logging', 1)
@@ -107,13 +127,12 @@ if __name__ == '__main__':
         cf.param.set_value('activeMarker.mode', 1)
         time.sleep(2)
 
-        # # auto-flicking
-        # cf.param.set_value('health.startFlick', 1)
-        # time.sleep(1)
         x_min = -0.5
         x_max = 1.0
-        y_min = -1.0
-        y_max = 0.5
+        y_min = -1.5
+        y_max = 0.0
+        z_min = 0.25
+        z_max = 0.3#1.0
         delta = 0.25
 
         with PositionHlCommander(scf,default_velocity=0.5) as pc:
@@ -136,3 +155,8 @@ if __name__ == '__main__':
 
         # stop mocap data collection
         qtmThread.close()
+
+    # Turn CF off
+    s = PowerSwitch(URI)
+    s.stm_power_down()
+    s.close()
