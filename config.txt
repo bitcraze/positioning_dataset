@@ -1,16 +1,15 @@
 1     # version
-512   # buffer size in bytes
+1024  # buffer size in bytes
 log   # file name
 0     # enable on startup (0/1)
 on:fixedFrequency
 100     # frequency
 1     # mode (0: disabled, 1: synchronous stabilizer, 2: asynchronous)
-lighthouse.x
-lighthouse.y
-lighthouse.z
 lighthouse.delta
-lighthouse.sensorsUsed
 stateEstimate.x
 stateEstimate.y
 stateEstimate.z
 on:activeMarkerModeChanged
+on:lhAngle
+on:lhCrossingBeam
+on:lhUartFrame

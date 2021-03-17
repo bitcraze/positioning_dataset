@@ -17,6 +17,10 @@ def compute_measurement_id(sensor, basestation, sweep):
             basestation * num_sweeps + \
             sweep
 
+def compute_measurement_id2(sensor, basestation):
+    return sensor * (num_lh + 1) + \
+            basestation
+
 # see https://stackoverflow.com/questions/22052532/matplotlib-python-clickable-points
 def on_pick(event):
     print(event.ind)
@@ -39,24 +43,37 @@ if __name__ == "__main__":
     # decode binary log data
     data_usd = cfusdlog.decode(args.file_usd)
 
+    # print(data_usd['lhUartFrame'])
+    # exit()
+
     cf_start_time = 0 #data_usd['lhAngle']['timestamp'][0]
 
     # new figure
     fig, ax = plt.subplots(2,1,sharex=True)
 
-    t = (np.array(data_usd['lhAngle']['timestamp']) - cf_start_time) / 1000
+    t = (np.array(data_usd['lhAngle']['timestamp']) - data_usd['lhAngle']['timestamp'][0]) / 1000
     d = compute_measurement_id(np.array(data_usd['lhAngle']['sensor']),
                                 np.array(data_usd['lhAngle']['basestation']),
                                 np.array(data_usd['lhAngle']['sweep']))
     ax[0].scatter(t, d)
     ax[0].set_ylabel('# Received LH Angle From ID')
+    ax[0].set_title('pulse processor')
 
-    t = (np.array(data_usd['lhUartFrame']['timestamp']) - cf_start_time) / 1000
-    d = compute_measurement_id(np.array(data_usd['lhUartFrame']['sensor']),
-                                np.array(data_usd['lhUartFrame']['basestation']),
-                                np.array(data_usd['lhUartFrame']['sweep']))
+    crs = mplcursors.cursor(ax[0],hover=True)
+
+    crs.connect("add", lambda sel: sel.annotation.set_text(
+        'Sensor {}\nBS {}\nSweep {}'.format(
+            data_usd['lhAngle']['sensor'][sel.target.index],
+            data_usd['lhAngle']['basestation'][sel.target.index],
+            data_usd['lhAngle']['sweep'][sel.target.index])))
+
+    t = (np.array(data_usd['lhUartFrame']['timestamp2FPGA']) - data_usd['lhUartFrame']['timestamp2FPGA'][0]) / 24e6
+    # t = (np.array(data_usd['lhUartFrame']['timestamp']) - cf_start_time) / 1000
+    d = compute_measurement_id2(np.array(data_usd['lhUartFrame']['sensor']),
+                                np.array(data_usd['lhUartFrame']['basestation']))
     ax[1].scatter(t, d, picker=10)
     ax[1].set_ylabel('# Received LH Angle From ID')
+    ax[1].set_title('uart frame')
 
     ax[-1].set_xlabel('Time [s]')
 
@@ -66,12 +83,12 @@ if __name__ == "__main__":
     crs = mplcursors.cursor(ax[1],hover=True)
 
     crs.connect("add", lambda sel: sel.annotation.set_text(
-        'Sensor {}\nBS {}\nSweep {}\nOffset {}\nTimestamp {}'.format(
+        'Sensor {}\nBS {}\nOffset {}\nTimestamp {}\nTimestamp2 {}'.format(
             data_usd['lhUartFrame']['sensor'][sel.target.index],
             data_usd['lhUartFrame']['basestation'][sel.target.index],
-            data_usd['lhUartFrame']['sweep'][sel.target.index],
             data_usd['lhUartFrame']['offset'][sel.target.index],
-            data_usd['lhUartFrame']['timestampFPGA'][sel.target.index])))
+            data_usd['lhUartFrame']['timestampFPGA'][sel.target.index],
+            data_usd['lhUartFrame']['timestamp2FPGA'][sel.target.index])))
 
     plt.show()
 
