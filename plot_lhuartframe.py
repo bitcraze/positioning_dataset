@@ -55,17 +55,37 @@ if __name__ == "__main__":
     d = compute_measurement_id(np.array(data_usd['lhAngle']['sensor']),
                                 np.array(data_usd['lhAngle']['basestation']),
                                 np.array(data_usd['lhAngle']['sweep']))
-    ax[0].scatter(t, d)
     ax[0].set_ylabel('# Received LH Angle From ID')
     ax[0].set_title('pulse processor')
+
+    # crazy analysis
+    last_angle_by_id = dict()
+    # issue_t = []
+    # issue_d = []
+    colors = []
+    for mid, angle, ts in zip(d, np.array(data_usd['lhAngle']['angle']), t):
+        if mid in last_angle_by_id and last_angle_by_id[mid] == angle:
+            colors.append('r')
+        else:
+            colors.append('b')
+            # issue_t.append(ts)
+            # issue_d.append(mid)
+            # print("WAAAH", angle, mid, ts)
+        last_angle_by_id[mid] = angle
+
+    ax[0].scatter(t, d, c=colors)
+    # print(len(issue_t), len(t))
+    # ax[0].scatter(np.array(issue_t), np.array(issue_d))
+
 
     crs = mplcursors.cursor(ax[0],hover=True)
 
     crs.connect("add", lambda sel: sel.annotation.set_text(
-        'Sensor {}\nBS {}\nSweep {}'.format(
+        'Sensor {}\nBS {}\nSweep {}\nAngle {}'.format(
             data_usd['lhAngle']['sensor'][sel.target.index],
             data_usd['lhAngle']['basestation'][sel.target.index],
-            data_usd['lhAngle']['sweep'][sel.target.index])))
+            data_usd['lhAngle']['sweep'][sel.target.index],
+            data_usd['lhAngle']['angle'][sel.target.index])))
 
     t = (np.array(data_usd['lhUartFrame']['timestamp2FPGA']) - data_usd['lhUartFrame']['timestamp2FPGA'][0]) / 24e6
     # t = (np.array(data_usd['lhUartFrame']['timestamp']) - cf_start_time) / 1000

@@ -43,7 +43,7 @@ from cflib.positioning.position_hl_commander import PositionHlCommander
 from qtm_thread import QtmThread
 
 URI = 'radio://0/60/2M/E7E7E7E7E7'
-INTENSITY = 50
+INTENSITY = 100
 usdCanLog = False
 
 def consoleReceived(data):
@@ -53,12 +53,14 @@ def consoleReceived(data):
 def paramReceived(name, value):
     if name == "usd.canLog":
         usdCanLog = int(value)
-    print(name, value)
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("file_mocap")
+    parser.add_argument('file_mocap')
+    parser.add_argument('estimation_mode', choices=['crossingBeam', 'kalman'])
+    parser.add_argument('operation_mode', choices=['time', 'flight'])
+    parser.add_argument('--time', default=10, type=int)
     args = parser.parse_args()
 
     # Only output errors from the logging framework
@@ -113,8 +115,13 @@ if __name__ == '__main__':
             exit("Can't log to USD!")
 
 
-        # enable lighthouse crossing beam method
-        cf.param.set_value('lighthouse.method', 0)
+        if args.estimation_mode == 'crossingBeam':
+            # enable lighthouse crossing beam method
+            cf.param.set_value('lighthouse.method', 0)
+        elif args.estimation_mode == 'kalman':
+            cf.param.set_value('lighthouse.method', 1)
+        else:
+            exit("Unknown mode", args.estimation_mode)
 
         # start logging motion capture data
         qtmThread = QtmThread(None, args.file_mocap)
@@ -135,15 +142,21 @@ if __name__ == '__main__':
         z_max = 0.3#1.0
         delta = 0.25
 
-        with PositionHlCommander(scf,default_velocity=0.5) as pc:
-            # sweeping pattern
-            for y in np.arange(y_min, y_max, 2*delta):
-                pc.go_to(x_min, y)
-                pc.go_to(x_max, y)
-                pc.go_to(x_max, y+delta)
-                pc.go_to(x_min, y+delta)
+        if args.operation_mode == 'flight':
+            with PositionHlCommander(scf,default_velocity=0.5) as pc:
+                for z in np.arange(z_min, z_max, delta):
+                    # sweeping pattern
+                    for y in np.arange(y_min, y_max, 2*delta):
+                        pc.go_to(x_min, y, z)
+                        pc.go_to(x_max, y, z)
+                        pc.go_to(x_max, y+delta, z)
+                        pc.go_to(x_min, y+delta, z)
 
-        # time.sleep(60)
+                pc.go_to(0, 0, 0.05)
+        elif args.operation_mode == 'time':
+            time.sleep(args.time)
+        else:
+            exit("unknown operation_mode", args.operation_mode)
 
         # disable active marker deck
         cf.param.set_value('activeMarker.mode', 0)

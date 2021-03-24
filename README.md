@@ -20,10 +20,9 @@ The firmware is currently in dev-datacollection, which is close to master with s
 
 #### Motion Capture
 
-We use Optitrack at 300 Hz in 'passive active marker mode'.
-TODO: add description on how to enable that.
+We use Optitrack at 300 Hz in 'untriggered active markers' (in Qualisys Track Manager select Project Options/Cameras/Marker Mode/Type).
 
-We calibrate the system using the Qualisys calibration kit.
+We calibrate the system using the Qualisys calibration kit. First make sure in the Project Options/Cameras/Marker Mode/Type to "Passive".
 
 #### Lighthouse
 
@@ -64,15 +63,37 @@ Absolute Euclidean error: ||position_mocap - position_lh|| (we report mean and w
 
 ### Results
 
-TODO: where to but raw data files?
+TODO: where to put raw data files?
 
 #### LH1 Crossing Beam, Jitter
 
+```
+python3 collect_data.py data/lh1_crossingBeam_jitter/mocap00.npy crossingBeam time --time 10
+```
+
 #### LH1 Crossing Beam, Manual Movement
+
+```
+python3 collect_data.py data/lh1_crossingBeam_move/mocap00.npy crossingBeam time --time 120
+```
 
 #### LH1 Crossing Beam, Flight
 
+```
+python3 collect_data.py data/lh1_crossingBeam_flight/mocap00.npy crossingBeam flight
+```
+
+#### LH1 Kalman, Jitter
+
+```
+python3 collect_data.py data/lh1_kalman_jitter/mocap00.npy kalman time --time 10
+```
+
 #### LH1 Kalman, Flight
+
+```
+python3 collect_data.py data/lh1_kalman_flight/mocap00.npy kalman flight
+```
 
 #### LH2 Crossing Beam, Jitter
 
