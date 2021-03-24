@@ -10,19 +10,37 @@ Here, we quantify the Lighthouse absolute accuracy as well as its jitter. We loo
 
 2. Kalman filter. This method is used during regular flight, directly considers the sweeping angles and IMU sensor data, and fuses all the information in an Extended Kalman filter. The data collected here can quantify the expected flight accuracy and used to tune (or generally improve) the existing Kalman filter.
 
+### Steps
+
+1. Prepare Crazyflie 2.1
+	a. add decks: long header pins, uSD-card deck, Lighthouse deck, and active marker deck (from bottom to top)
+	b. Flash STM firmware (`dev-datacollection` branch)
+	c. Put config.txt on uSD card deck
+2. Prepare Motion Capture System
+	a. Calibration (make sure to select in "Tools/Project Options/Input Devices/Cameras/Marker Mode/Type" the "Passive" option; place origin triangle on ground; walk around waving the wand)
+	b. For tracking use the "untriggered active markers" mode (same menu as a.)
+	c. Switch to 300 Hz Update rate
+3. Prepare LightHouse
+	a. Calibrate using cfclient (Origin and orientation of LH and Mocap do not have to match)
+	b. Save the system config in the respective data folders
+4. Collect Data
+	a. Run scripts as outlined below
+	b. Copy the resulting logXX files from the uSD card to the respective data folders
+	c. Check collected data using the visualization/analysis scripts
+
 ### Experimental Setup
 
 #### Crazyflie
 
 Crazyflie 2.1 with long header pins, uSD-card deck, Lighthouse deck, and active marker deck (from bottom to top). Note that if you put the Lighthouse deck above the active marker deck, there will be interference.
 
-The firmware is currently in dev-datacollection, which is close to master with some additional event triggers.
+The firmware is currently in the `dev-datacollection` branch, which is close to master with some additional event triggers.
 
 #### Motion Capture
 
-We use Optitrack at 300 Hz in 'untriggered active markers' (in Qualisys Track Manager select Project Options/Cameras/Marker Mode/Type).
+We calibrate the system using the Qualisys calibration kit. For calibration, make sure to select in "Tools/Project Options/Input Devices/Cameras/Marker Mode/Type" the "Passive" option.
 
-We calibrate the system using the Qualisys calibration kit. First make sure in the Project Options/Cameras/Marker Mode/Type to "Passive".
+We use Optitrack at 300 Hz in "untriggered active markers" mode.
 
 #### Lighthouse
 
@@ -51,7 +69,7 @@ to find the optimal transformation (translation and rotation) of the two coordin
 
 The temporal alignment uses a two-step approach.
 
-First, the initial alignment is determent by a physical event that can be observed from both (motion capture and Crazyflie) systems. Here, we turn the IR LEDs on the active marker deck on at the beginning and off at the end. On the Crazyflie side, we record a timestamp for each of the events. On the motion capture side, we record the camera timestamps when we first and last see the markers. The offset and relative scale of the two clocks can then be easily computed. Another physical event we explored was "flicking" the Crazyflie and observing the IMU data/sudden movement, but this yields a less accurate and reproducible result.
+First, the initial alignment is determined by a physical event that can be observed from both (motion capture and Crazyflie) systems. Here, we turn the IR LEDs on the active marker deck on at the beginning and off at the end. On the Crazyflie side, we record a timestamp for each of the events. On the motion capture side, we record the camera timestamps when we first and last see the markers. The offset and relative scale of the two clocks can then be easily computed. Another physical event we explored was "flicking" the Crazyflie and observing the IMU data/sudden movement, but this yields a less accurate and reproducible result.
 
 Second, we numerically refine this initial guess using an exhaustive search. For all possible relative start/end time offsets (in the range of -100 to +100ms), we compute the spatial alignment. We use the relative start/end time offset that yielded the lowest residual error.
 
