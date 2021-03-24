@@ -18,13 +18,13 @@ Here, we quantify the Lighthouse absolute accuracy as well as its jitter. We loo
 	3. Put config.txt on uSD card deck
 2. Prepare Motion Capture System
 	1. Calibration (make sure to select in "Tools/Project Options/Input Devices/Cameras/Marker Mode/Type" the "Passive" option; place origin triangle on ground; walk around waving the wand)
-	2. For tracking use the "untriggered active markers" mode (same menu as 1.)
+	2. For tracking use the "untriggered active markers" mode (same menu as i.)
 	3. Switch to 300 Hz Update rate
 3. Prepare LightHouse
 	1. Calibrate using cfclient (Origin and orientation of LH and Mocap do not have to match)
 	2. Save the system config in the respective data folders
 4. Collect Data
-	1. Run scripts as outlined below
+	1. Run scripts as outlined in the "Results" section
 	2. Copy the resulting logXX files from the uSD card to the respective data folders
 	3. Check collected data using the visualization/analysis scripts
 
@@ -85,6 +85,8 @@ TODO: where to put raw data files?
 
 #### LH1 Crossing Beam, Jitter
 
+Repeat 5 times at different positions:
+
 ```
 python3 collect_data.py data/lh1_crossingBeam_jitter/mocap00.npy crossingBeam time --time 10
 ```
@@ -102,6 +104,9 @@ python3 collect_data.py data/lh1_crossingBeam_flight/mocap00.npy crossingBeam fl
 ```
 
 #### LH1 Kalman, Jitter
+
+Repeat 5 times at different positions:
+
 
 ```
 python3 collect_data.py data/lh1_kalman_jitter/mocap00.npy kalman time --time 10

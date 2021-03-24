@@ -30,6 +30,7 @@ Change the URI variable to your Crazyflie configuration.
 """
 import logging
 import time
+import os
 import numpy as np
 import argparse
 
@@ -44,13 +45,14 @@ from qtm_thread import QtmThread
 
 URI = 'radio://0/60/2M/E7E7E7E7E7'
 INTENSITY = 100
-usdCanLog = False
+usdCanLog = None
 
 def consoleReceived(data):
     print(data, end='')
 
 
 def paramReceived(name, value):
+    global usdCanLog
     if name == "usd.canLog":
         usdCanLog = int(value)
 
@@ -65,6 +67,10 @@ if __name__ == '__main__':
 
     # Only output errors from the logging framework
     logging.basicConfig(level=logging.ERROR)
+
+    # Create output folder, if needed
+    folder = os.path.dirname(args.file_mocap)
+    os.makedirs(folder, exist_ok=True)
 
     # Initialize the low-level drivers (don't list the debug drivers)
     cflib.crtp.init_drivers(enable_debug_driver=False)
@@ -111,7 +117,7 @@ if __name__ == '__main__':
         if lhStatus != 2:
             exit("LightHouse not working!")
 
-        if usdCanLog != 0:
+        if usdCanLog != 1:
             exit("Can't log to USD!")
 
 

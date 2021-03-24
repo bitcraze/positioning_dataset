@@ -1,5 +1,5 @@
 1     # version
-1024  # buffer size in bytes
+2048  # buffer size in bytes
 log   # file name
 0     # enable on startup (0/1)
 on:fixedFrequency
@@ -12,4 +12,3 @@ stateEstimate.z
 on:activeMarkerModeChanged
 on:lhAngle
 on:lhCrossingBeam
-on:lhUartFrame

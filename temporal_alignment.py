@@ -39,10 +39,14 @@ def process(time_offset_start, time_offset_end):
 
     # extract raw data
     t = np.array(data_usd['lhCrossingBeam']['timestamp'])
-    idx = np.argwhere(t >= cf_start_time)[0][0]
-    idxEnd = np.argwhere(t >= cf_end_time)
-    if len(idxEnd) > 0:
-        idxEnd = idxEnd[0][0]
+    argwhere = np.argwhere(t >= cf_start_time)
+    if len(argwhere) > 0:
+        idx = argwhere[0][0]
+    else:
+        idx = 0
+    argwhere = np.argwhere(t >= cf_end_time)
+    if len(argwhere) > 0:
+        idxEnd = argwhere[0][0]
     else:
         idxEnd = -1
     time_usd = (t - cf_start_time) / 1000 * time_scale
