@@ -13,20 +13,20 @@ Here, we quantify the Lighthouse absolute accuracy as well as its jitter. We loo
 ### Steps
 
 1. Prepare Crazyflie 2.1
-	a. add decks: long header pins, uSD-card deck, Lighthouse deck, and active marker deck (from bottom to top)
-	b. Flash STM firmware (`dev-datacollection` branch)
-	c. Put config.txt on uSD card deck
+	1. add decks: long header pins, uSD-card deck, Lighthouse deck, and active marker deck (from bottom to top)
+	2. Flash STM firmware (`dev-datacollection` branch)
+	3. Put config.txt on uSD card deck
 2. Prepare Motion Capture System
-	a. Calibration (make sure to select in "Tools/Project Options/Input Devices/Cameras/Marker Mode/Type" the "Passive" option; place origin triangle on ground; walk around waving the wand)
-	b. For tracking use the "untriggered active markers" mode (same menu as a.)
-	c. Switch to 300 Hz Update rate
+	1. Calibration (make sure to select in "Tools/Project Options/Input Devices/Cameras/Marker Mode/Type" the "Passive" option; place origin triangle on ground; walk around waving the wand)
+	2. For tracking use the "untriggered active markers" mode (same menu as 1.)
+	3. Switch to 300 Hz Update rate
 3. Prepare LightHouse
-	a. Calibrate using cfclient (Origin and orientation of LH and Mocap do not have to match)
-	b. Save the system config in the respective data folders
+	1. Calibrate using cfclient (Origin and orientation of LH and Mocap do not have to match)
+	2. Save the system config in the respective data folders
 4. Collect Data
-	a. Run scripts as outlined below
-	b. Copy the resulting logXX files from the uSD card to the respective data folders
-	c. Check collected data using the visualization/analysis scripts
+	1. Run scripts as outlined below
+	2. Copy the resulting logXX files from the uSD card to the respective data folders
+	3. Check collected data using the visualization/analysis scripts
 
 ### Experimental Setup
 
