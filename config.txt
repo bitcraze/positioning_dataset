@@ -3,12 +3,19 @@
 log   # file name
 0     # enable on startup (0/1)
 on:fixedFrequency
-100     # frequency
+100   # frequency
 1     # mode (0: disabled, 1: synchronous stabilizer, 2: asynchronous)
 lighthouse.delta
 stateEstimate.x
 stateEstimate.y
 stateEstimate.z
+gyro.x
+gyro.y
+gyro.z
+acc.x
+acc.y
+acc.z
 on:activeMarkerModeChanged
 on:lhAngle
 on:lhCrossingBeam
+on:lhUartFrame

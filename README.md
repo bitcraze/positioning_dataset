@@ -81,7 +81,7 @@ Absolute Euclidean error: ||position_mocap - position_lh|| (we report mean and w
 
 ### Results
 
-TODO: where to put raw data files?
+All collected data is in the `data` subfolder.
 
 #### LH1 Crossing Beam, Jitter
 
@@ -93,6 +93,7 @@ python3 collect_data.py data/lh1_crossingBeam_jitter/mocap00.npy crossingBeam ti
 
 #### LH1 Crossing Beam, Manual Movement
 
+Mount CF on Stick and move it in random motions:
 ```
 python3 collect_data.py data/lh1_crossingBeam_move/mocap00.npy crossingBeam time --time 120
 ```

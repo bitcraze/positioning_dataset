@@ -108,7 +108,7 @@ if __name__ == "__main__":
                 best_error = error
                 best_time_offset_start = time_offset_start
                 best_time_offset_end = time_offset_end
-                print(best_error, best_time_offset_start, best_time_offset_end)
+                # print(best_error, best_time_offset_start, best_time_offset_end)
             # time_offset_ms += 5
             # if time_offset_ms > 100:
                 # time_offset_ms = best_time_offset
