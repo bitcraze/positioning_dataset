@@ -101,7 +101,30 @@ python3 collect_data.py data/lh1_crossingBeam_move/mocap00.npy crossingBeam time
 #### LH1 Crossing Beam, Flight
 
 ```
-python3 collect_data.py data/lh1_crossingBeam_flight/mocap00.npy crossingBeam flight
+python3 collect_data.py data/lh1_crossingBeam_flight/mocap00.npy crossingBeam flightSweep
+```
+
+00:
+	x_min = -0.75
+	x_max = 0.75
+	y_min = -0.75
+	y_max = 0.75
+	z_min = 0.25
+	z_max = 1.75
+	delta = 0.5
+	velocity = 0.5
+
+01:
+	velocity = 1.0
+
+02:
+	velocity = 0.25
+
+
+```
+python3 collect_data.py data/lh1_crossingBeam_flight/mocap03.npy crossingBeam flightRandom --time 120 --velocity 0.5
+python3 collect_data.py data/lh1_crossingBeam_flight/mocap04.npy crossingBeam flightRandom --time 120 --velocity 0.25
+python3 collect_data.py data/lh1_crossingBeam_flight/mocap05.npy crossingBeam flightRandom --time 120 --velocity 0.75
 ```
 
 #### LH1 Kalman, Jitter
@@ -116,7 +139,10 @@ python3 collect_data.py data/lh1_kalman_jitter/mocap00.npy kalman time --time 10
 #### LH1 Kalman, Flight
 
 ```
-python3 collect_data.py data/lh1_kalman_flight/mocap00.npy kalman flight
+python3 collect_data.py data/lh1_kalman_flight/mocap00.npy kalman flightSweep --velocity 0.25
+python3 collect_data.py data/lh1_kalman_flight/mocap01.npy kalman flightSweep --velocity 0.5
+python3 collect_data.py data/lh1_kalman_flight/mocap02.npy kalman flightRandom --time 120 --velocity 0.25
+python3 collect_data.py data/lh1_kalman_flight/mocap03.npy kalman flightRandom --time 120 --velocity 0.5
 ```
 
 #### LH2 Crossing Beam, Jitter

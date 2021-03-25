@@ -46,6 +46,8 @@ class QtmThread(Thread):
         self._data = []
         self._filename = filename
         self._framenumber = None
+        self._totalFrames = 0
+        self._invalidFrames = 0
         # self._f = open(filename, "w")
         # self._f.write("time[ms],x[m],y[m],z[m]\n")
 
@@ -95,6 +97,7 @@ class QtmThread(Thread):
         if self._framenumber is not None and self._framenumber + 1 != packet.framenumber:
             print("Warning: Skipped a frame!", self._framenumber, packet.framenumber)
         self._framenumber = packet.framenumber
+        self._totalFrames += 1
         # print("Framenumber: {}".format(packet.framenumber))
         # print(packet.timestamp)
         header, markers3d = packet.get_3d_markers_no_label()
@@ -111,6 +114,7 @@ class QtmThread(Thread):
             self._data.append([packet.timestamp / 1000, pos[0], pos[1], pos[2]])
             if self._start_time is None:
                 self._start_time = time.time()
+                self._totalFrames = 1
             self._end_time = time.time()
             # self._f.write("{},{},{},{}\n".format(packet.timestamp / 1000, pos[0], pos[1], pos[2]))
             # self._has_ever_received_markers = True
@@ -121,10 +125,15 @@ class QtmThread(Thread):
                 self._data.append([packet.timestamp / 1000, np.nan, np.nan, np.nan])
                 if self._start_time is None:
                     self._start_time = time.time()
+                    self._totalFrames = 1
                 self._end_time = time.time()
                 # self._f.write("{},{},{},{}\n".format(packet.timestamp / 1000, np.nan, np.nan, np.nan))
                 # if self._has_ever_received_markers:
-                print("Warning: only {} markers visible!".format(len(markers3d)))
+                self._invalidFrames += 1
+                print("[{}] Warning: only {} markers visible! Missed {} %.".format(
+                    time.time(),
+                    len(markers3d),
+                    self._invalidFrames/self._totalFrames*100.0))
 
     async def _close(self):
         await self.connection.stream_frames_stop()

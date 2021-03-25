@@ -61,8 +61,9 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('file_mocap')
     parser.add_argument('estimation_mode', choices=['crossingBeam', 'kalman'])
-    parser.add_argument('operation_mode', choices=['time', 'flight'])
+    parser.add_argument('operation_mode', choices=['time', 'flightSweep', 'flightRandom'])
     parser.add_argument('--time', default=10, type=int)
+    parser.add_argument('--velocity', default=0.5, type=float)
     args = parser.parse_args()
 
     # Only output errors from the logging framework
@@ -140,16 +141,19 @@ if __name__ == '__main__':
         cf.param.set_value('activeMarker.mode', 1)
         time.sleep(2)
 
-        x_min = -0.5
-        x_max = 1.0
-        y_min = -1.5
-        y_max = 0.0
-        z_min = 0.25
-        z_max = 0.3#1.0
-        delta = 0.25
+        size = np.array([1.5,1.5,1.5])
+        offset = np.array([-1.2,-0.9,0.25])
+        delta = 0.5
 
-        if args.operation_mode == 'flight':
-            with PositionHlCommander(scf,default_velocity=0.5) as pc:
+        x_min = offset[0]
+        x_max = offset[0] + size[0]
+        y_min = offset[1]
+        y_max = offset[1] + size[1]
+        z_min = offset[2]
+        z_max = offset[2] + size[2]
+
+        if args.operation_mode == 'flightSweep':
+            with PositionHlCommander(scf,default_velocity=args.velocity) as pc:
                 for z in np.arange(z_min, z_max, delta):
                     # sweeping pattern
                     for y in np.arange(y_min, y_max, 2*delta):
@@ -158,6 +162,13 @@ if __name__ == '__main__':
                         pc.go_to(x_max, y+delta, z)
                         pc.go_to(x_min, y+delta, z)
 
+                pc.go_to(0, 0, 0.05)
+        elif args.operation_mode == 'flightRandom':
+            with PositionHlCommander(scf,default_velocity=args.velocity) as pc:
+                start = time.time()
+                while time.time() - start < args.time:
+                    pos = np.random.uniform(offset, offset+size)
+                    pc.go_to(pos[0], pos[1], pos[2])
                 pc.go_to(0, 0, 0.05)
         elif args.operation_mode == 'time':
             time.sleep(args.time)

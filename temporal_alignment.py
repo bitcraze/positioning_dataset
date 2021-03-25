@@ -38,24 +38,44 @@ def process(time_offset_start, time_offset_end):
     # idx = np.argwhere(time_fixedFrequency > 0)[0][0] + time_offset
 
     # extract raw data
-    t = np.array(data_usd['lhCrossingBeam']['timestamp'])
-    argwhere = np.argwhere(t >= cf_start_time)
-    if len(argwhere) > 0:
-        idx = argwhere[0][0]
+    if len(data_usd['lhCrossingBeam']['timestamp']) > 0:
+        t = np.array(data_usd['lhCrossingBeam']['timestamp'])
+        argwhere = np.argwhere(t >= cf_start_time)
+        if len(argwhere) > 0:
+            idx = argwhere[0][0]
+        else:
+            idx = 0
+        argwhere = np.argwhere(t >= cf_end_time)
+        if len(argwhere) > 0:
+            idxEnd = argwhere[0][0]
+        else:
+            idxEnd = -1
+        time_usd = (t - cf_start_time) / 1000 * time_scale
+        time_usd = time_usd[idx:idxEnd]
+        pos_usd = np.stack((
+            data_usd['lhCrossingBeam']['x'][idx:idxEnd],
+            data_usd['lhCrossingBeam']['y'][idx:idxEnd],
+            data_usd['lhCrossingBeam']['z'][idx:idxEnd]), axis=1)
+        delta = data_usd['lhCrossingBeam']['delta'][idx:idxEnd]
     else:
-        idx = 0
-    argwhere = np.argwhere(t >= cf_end_time)
-    if len(argwhere) > 0:
-        idxEnd = argwhere[0][0]
-    else:
-        idxEnd = -1
-    time_usd = (t - cf_start_time) / 1000 * time_scale
-    time_usd = time_usd[idx:idxEnd]
-    pos_usd = np.stack((
-        data_usd['lhCrossingBeam']['x'][idx:idxEnd],
-        data_usd['lhCrossingBeam']['y'][idx:idxEnd],
-        data_usd['lhCrossingBeam']['z'][idx:idxEnd]), axis=1)
-    delta = data_usd['lhCrossingBeam']['delta'][idx:idxEnd]
+        t = np.array(data_usd['fixedFrequency']['timestamp'])
+        argwhere = np.argwhere(t >= cf_start_time)
+        if len(argwhere) > 0:
+            idx = argwhere[0][0]
+        else:
+            idx = 0
+        argwhere = np.argwhere(t >= cf_end_time)
+        if len(argwhere) > 0:
+            idxEnd = argwhere[0][0]
+        else:
+            idxEnd = -1
+        time_usd = (t - cf_start_time) / 1000 * time_scale
+        time_usd = time_usd[idx:idxEnd]
+        pos_usd = np.stack((
+            data_usd['fixedFrequency']['stateEstimate.x'][idx:idxEnd],
+            data_usd['fixedFrequency']['stateEstimate.y'][idx:idxEnd],
+            data_usd['fixedFrequency']['stateEstimate.z'][idx:idxEnd]), axis=1)
+        delta = None
 
     # merge dataset by interpolating mocap data
     pos_mocap_merged = np.stack((
@@ -165,8 +185,9 @@ if __name__ == "__main__":
 
     error = np.linalg.norm(pos_usd - pos_mocap_merged, axis=1)
     ax[4].scatter(time_usd, error, label='LH')
-    ax2 = ax[4].twinx()
-    ax2.plot(time_usd, delta, 'r.')
+    if delta is not None:
+        ax2 = ax[4].twinx()
+        ax2.plot(time_usd, delta, 'r.')
     print("Euc. Error: Avg: {} Max: {}".format(np.mean(error[valid]), np.max(error[valid])))
 
     # time = (np.array(data_usd['fixedFrequency']['timestamp']) - cf_start_time) / 1000
