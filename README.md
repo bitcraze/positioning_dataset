@@ -131,7 +131,6 @@ python3 collect_data.py data/lh1_crossingBeam_flight/mocap05.npy crossingBeam fl
 
 Repeat 5 times at different positions:
 
-
 ```
 python3 collect_data.py data/lh1_kalman_jitter/mocap00.npy kalman time --time 10
 ```
@@ -147,9 +146,42 @@ python3 collect_data.py data/lh1_kalman_flight/mocap03.npy kalman flightRandom -
 
 #### LH2 Crossing Beam, Jitter
 
+Repeat 5 times at different positions:
+
+```
+python3 collect_data.py data/lh2_crossingBeam_jitter/mocap00.npy crossingBeam time --time 10
+```
+
 #### LH2 Crossing Beam, Manual Movement
+
+Mount CF on Stick and move it in random motions:
+```
+python3 collect_data.py data/lh2_crossingBeam_move/mocap00.npy crossingBeam time --time 120
+```
 
 #### LH2 Crossing Beam, Flight
 
+```
+python3 collect_data.py data/lh2_crossingBeam_flight/mocap00.npy crossingBeam flightSweep --velocity 0.25
+python3 collect_data.py data/lh2_crossingBeam_flight/mocap01.npy crossingBeam flightSweep --velocity 0.5
+python3 collect_data.py data/lh2_crossingBeam_flight/mocap02.npy crossingBeam flightRandom --time 120 --velocity 0.25
+python3 collect_data.py data/lh2_crossingBeam_flight/mocap03.npy crossingBeam flightRandom --time 120 --velocity 0.5
+```
+
+#### LH2 Kalman, Jitter
+
+Repeat 5 times at different positions:
+
+```
+python3 collect_data.py data/lh2_kalman_jitter/mocap00.npy kalman time --time 10
+```
+
 #### LH2 Kalman, Flight
+
+```
+python3 collect_data.py data/lh2_kalman_flight/mocap00.npy kalman flightSweep --velocity 0.25
+python3 collect_data.py data/lh2_kalman_flight/mocap01.npy kalman flightSweep --velocity 0.5
+python3 collect_data.py data/lh2_kalman_flight/mocap02.npy kalman flightRandom --time 120 --velocity 0.25
+python3 collect_data.py data/lh2_kalman_flight/mocap03.npy kalman flightRandom --time 120 --velocity 0.5
+```
 
