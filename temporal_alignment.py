@@ -38,7 +38,7 @@ def process(time_offset_start, time_offset_end):
     # idx = np.argwhere(time_fixedFrequency > 0)[0][0] + time_offset
 
     # extract raw data
-    if len(data_usd['lhCrossingBeam']['timestamp']) > 0:
+    if 'lhCrossingBeam' in data_usd and len(data_usd['lhCrossingBeam']['timestamp']) > 0:
         t = np.array(data_usd['lhCrossingBeam']['timestamp'])
         argwhere = np.argwhere(t >= cf_start_time)
         if len(argwhere) > 0:

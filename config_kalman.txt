@@ -1,0 +1,42 @@
+1     # version
+2048  # buffer size in bytes
+log   # file name
+0     # enable on startup (0/1)
+on:fixedFrequency
+100   # frequency
+1     # mode (0: disabled, 1: synchronous stabilizer, 2: asynchronous)
+lighthouse.delta
+stateEstimate.x
+stateEstimate.y
+stateEstimate.z
+gyro.x
+gyro.y
+gyro.z
+acc.x
+acc.y
+acc.z
+on:activeMarkerModeChanged
+on:lhAngle
+on:lhUartFrame
+on:estimatorEnqueueGyroscope
+gyro.x
+gyro.y
+gyro.z
+on:estimatorEnqueueAcceleration
+acc.x
+acc.y
+acc.z
+on:estimatorEnqueueBarometer
+baro.asl
+baro.temp
+baro.pressure
+on:estimatorEnqueueFlow
+motion.motion
+motion.deltaX
+motion.deltaY
+motion.shutter
+motion.maxRaw
+motion.minRaw
+motion.Rawsum
+motion.outlierCount
+motion.squal
