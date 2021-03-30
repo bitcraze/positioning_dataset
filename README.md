@@ -185,3 +185,18 @@ python3 collect_data.py data/lh2_kalman_flight/mocap02.npy kalman flightRandom -
 python3 collect_data.py data/lh2_kalman_flight/mocap03.npy kalman flightRandom --time 120 --velocity 0.5
 ```
 
+## Flow (vs Qualisys Motion Capture)
+
+```
+python3 collect_data.py data/flowv2_move_carpet/mocap00.npy kalman time --time 60
+```
+
+
+#### LH2 Kalman, Flight
+
+```
+python3 collect_data.py data/flowv2_flight_carpet/mocap00.npy kalman flightSweep --velocity 0.25
+python3 collect_data.py data/flowv2_flight_carpet/mocap01.npy kalman flightSweep --velocity 0.5
+python3 collect_data.py data/flowv2_flight_carpet/mocap02.npy kalman flightRandom --time 60 --velocity 0.25
+python3 collect_data.py data/flowv2_flight_carpet/mocap03.npy kalman flightRandom --time 60 --velocity 0.5
+```

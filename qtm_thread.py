@@ -111,7 +111,12 @@ class QtmThread(Thread):
                 a[i] = [marker.x, marker.y, marker.z]
             a /= 1000
             pos = np.mean(a, axis=0)
-            self._data.append([packet.timestamp / 1000, pos[0], pos[1], pos[2]])
+            self._data.append([packet.timestamp / 1000, 
+                pos[0], pos[1], pos[2],
+                a[0][0], a[0][1], a[0][2],
+                a[1][0], a[1][1], a[1][2],
+                a[2][0], a[2][1], a[2][2],
+                a[3][0], a[3][1], a[3][2]])
             if self._start_time is None:
                 self._start_time = time.time()
                 self._totalFrames = 1
@@ -122,7 +127,12 @@ class QtmThread(Thread):
             _, markers2d = packet.get_2d_markers()
             num_markers2d = sum([len(m) for m in markers2d])
             if num_markers2d > 0:
-                self._data.append([packet.timestamp / 1000, np.nan, np.nan, np.nan])
+                self._data.append([packet.timestamp / 1000, 
+                    np.nan, np.nan, np.nan,
+                    np.nan, np.nan, np.nan,
+                    np.nan, np.nan, np.nan,
+                    np.nan, np.nan, np.nan,
+                    np.nan, np.nan, np.nan])
                 if self._start_time is None:
                     self._start_time = time.time()
                     self._totalFrames = 1

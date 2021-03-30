@@ -46,6 +46,7 @@ from qtm_thread import QtmThread
 URI = 'radio://0/60/2M/E7E7E7E7E7'
 INTENSITY = 100
 usdCanLog = None
+deckFlow2 = 0
 
 def consoleReceived(data):
     print(data, end='')
@@ -53,8 +54,11 @@ def consoleReceived(data):
 
 def paramReceived(name, value):
     global usdCanLog
+    global deckFlow2
     if name == "usd.canLog":
         usdCanLog = int(value)
+    if name == "deck.bcFlow2":
+        deckFlow2 = int(value)
 
 
 if __name__ == '__main__':
@@ -94,6 +98,10 @@ if __name__ == '__main__':
         cf.param.add_update_callback(group='usd', name='canLog', cb=paramReceived)
         cf.param.request_param_update('usd.canLog')
 
+        # check flow deck
+        cf.param.add_update_callback(group='deck', name='bcFlow2', cb=paramReceived)
+        cf.param.request_param_update('deck.bcFlow2')
+
         # configure active marker deck
         cf.param.set_value('activeMarker.mode', 0)
         cf.param.set_value('activeMarker.front', INTENSITY)
@@ -115,8 +123,8 @@ if __name__ == '__main__':
         if vbat < 3.6:
             exit("Battery too low!")
 
-        if lhStatus != 2:
-            exit("LightHouse not working!")
+        if lhStatus != 2 and deckFlow2 != 1:
+            exit("LightHouse not working or flow not available!")
 
         if usdCanLog != 1:
             exit("Can't log to USD!")
@@ -127,6 +135,10 @@ if __name__ == '__main__':
             cf.param.set_value('lighthouse.method', 0)
         elif args.estimation_mode == 'kalman':
             cf.param.set_value('lighthouse.method', 1)
+            cf.param.set_value('kalman.initialX', 0)
+            cf.param.set_value('kalman.initialY', 0)
+            cf.param.set_value('kalman.initialZ', 0)
+            cf.param.set_value('kalman.resetEstimation', 1)
         else:
             exit("Unknown mode", args.estimation_mode)
 
@@ -141,9 +153,15 @@ if __name__ == '__main__':
         cf.param.set_value('activeMarker.mode', 1)
         time.sleep(2)
 
-        size = np.array([1.5,1.5,1.5])
-        offset = np.array([-1.2,-0.9,0.25])
-        delta = 0.5
+        # Lighthouse
+        # size = np.array([1.5,1.5,1.5])
+        # offset = np.array([-1.2,-0.9,0.25])
+        # delta = 0.5
+
+        # Flow
+        size = np.array([1.0,1.0,1.5])
+        offset = np.array([-0.5,-0.5,0.25])
+        delta = 0.25
 
         x_min = offset[0]
         x_max = offset[0] + size[0]
