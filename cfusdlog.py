@@ -83,6 +83,11 @@ def decode(filename):
 
         # print(event_id, timestamp, eventData)
 
+    # remove keys that had no data
+    for event_name in list(result.keys()):
+        if len(result[event_name]['timestamp']) == 0:
+            del result[event_name]
+
     return result
 
 
