@@ -2,10 +2,10 @@
 """
 Helper to decode binary logged sensor data from crazyflie2 with uSD-Card-Deck
 """
+import argparse
 from zlib import crc32
 import struct
 import numpy as np
-import os
 
 # extract null-terminated string
 def _get_name(data, idx):
@@ -88,9 +88,17 @@ def decode(filename):
         if len(result[event_name]['timestamp']) == 0:
             del result[event_name]
 
+    # convert to numpy arrays
+    for event_name in result.keys():
+        for var_name in result[event_name]:
+            result[event_name][var_name] = np.array(result[event_name][var_name])
+
     return result
 
 
 if __name__ == "__main__":
-    data = decode("/media/whoenig/CF/log00")
+    parser = argparse.ArgumentParser()
+    parser.add_argument("filename")
+    args = parser.parse_args()
+    data = decode(args.filename)
     print(data)
