@@ -118,12 +118,28 @@ class TemporalAlignment:
         # R, t = compute_rigid_transform(pos_usd[sensorsUsed > 0], pos_mocap_merged[sensorsUsed > 0])
         # print(pos_usd.shape, pos_mocap_merged.shape)
         valid = ~np.isnan(pos_mocap_merged).any(axis=1)
-        valid = np.logical_and(valid, self.delta<0.1)
+        if self.delta is not None:
+            valid = np.logical_and(valid, self.delta<0.1)
+        else:
+            pass
+            # min_pos = np.array([-1.2, -0.9, 0.5])
+            # max_pos = min_pos + 1.5
+            # valid = np.logical_and(valid, (pos_mocap_merged > min_pos).all(axis=1))
+            # valid = np.logical_and(valid, (pos_mocap_merged < max_pos).all(axis=1))
+            lhAngle_time = (self.data_usd['lhAngle']['timestamp'] - self.cf_start_time) / 1000 * self.time_scale
+            invalidIdx = np.argwhere(np.diff(lhAngle_time) > 0.25)
+            if len(invalidIdx) > 0:
+                for idx2 in invalidIdx:
+                    idx = idx2[0]
+                    # print(lhAngle_time[idx], lhAngle_time[idx+1])
+                    valid=np.logical_and(valid, np.logical_not(np.logical_and(time_usd >= lhAngle_time[idx], time_usd <= lhAngle_time[idx+1] + 1.0)))
+            # exit()
+            # closest_time = np.array([np.abs(lhAngle_time - t).min() for t in time_usd])
+            # print(closest_time)
+            # exit()
+            # valid = np.logical_and(valid, closest_time < 0.01)
 
-        # min_pos = np.array([-1.2, -0.9, 0.5])
-        # max_pos = min_pos + 1.5
-        # valid = np.logical_and(valid, (pos_mocap_merged > min_pos).all(axis=1))
-        # valid = np.logical_and(valid, (pos_mocap_merged < max_pos).all(axis=1))
+
         R, t = compute_rigid_transform(pos_usd[valid], pos_mocap_merged[valid])
         pos_usd = pos_usd @ R.T + t
 
@@ -131,8 +147,10 @@ class TemporalAlignment:
         self.pos_usd = pos_usd
         self.pos_mocap_merged = pos_mocap_merged
         self.valid = valid
+        self.error = np.linalg.norm(
+            pos_usd[valid] - pos_mocap_merged[valid], axis=1)
 
-        return np.mean(np.linalg.norm(pos_usd[valid] - pos_mocap_merged[valid], axis=1))
+        return np.mean(self.error)
 
 
 if __name__ == "__main__":
@@ -181,13 +199,12 @@ if __name__ == "__main__":
     ax[3].scatter(t[idx:], d[idx:])
     ax[3].set_ylabel('# Received LH Angle From ID')
 
-    error = np.linalg.norm(r.pos_usd - r.pos_mocap_merged, axis=1)
-    ax[4].scatter(r.time_usd[r.valid], error[r.valid], label='LH')
+    ax[4].scatter(r.time_usd[r.valid], r.error, label='LH')
     if r.delta is not None:
         ax2 = ax[4].twinx()
         ax2.plot(r.time_usd[r.valid], r.delta[r.valid], 'r.')
         ax2.tick_params(axis='y', colors='r')
-    print("Euc. Error: Avg: {} Max: {}".format(np.mean(error[r.valid]), np.max(error[r.valid])))
+    print("Euc. Error: Avg: {} Max: {}".format(np.mean(r.error), np.max(r.error)))
 
     ax[4].set_xlabel('Time [s]')
     ax[4].set_ylabel('Euclidean Error [m]')
@@ -195,17 +212,17 @@ if __name__ == "__main__":
 
     plt.show()
 
-    #
-    from mpl_toolkits.mplot3d import Axes3D
-    from matplotlib import cm
-    fig = plt.figure()
-    ax = fig.add_subplot(111, projection='3d')
-    p3d = ax.scatter(r.pos_mocap_merged[r.valid,0], r.pos_mocap_merged[r.valid,1], r.pos_mocap_merged[r.valid,2], s=30, c=error[r.valid], cmap = cm.coolwarm)
-    ax.set_xlabel('X [m]')
-    ax.set_ylabel('Y [m]')
-    ax.set_zlabel('Z [m]')
-    fig.colorbar(p3d, label='Euclidean Error [m]')
-    plt.show()
+    # #
+    # from mpl_toolkits.mplot3d import Axes3D
+    # from matplotlib import cm
+    # fig = plt.figure()
+    # ax = fig.add_subplot(111, projection='3d')
+    # p3d = ax.scatter(r.pos_mocap_merged[r.valid,0], r.pos_mocap_merged[r.valid,1], r.pos_mocap_merged[r.valid,2], s=30, c=error[r.valid], cmap = cm.coolwarm)
+    # ax.set_xlabel('X [m]')
+    # ax.set_ylabel('Y [m]')
+    # ax.set_zlabel('Z [m]')
+    # fig.colorbar(p3d, label='Euclidean Error [m]')
+    # plt.show()
 
-    data = np.concatenate((r.pos_mocap_merged[r.valid], np.atleast_2d(error).T[r.valid]), axis=1)
-    print(data.shape)
+    # data = np.concatenate((r.pos_mocap_merged[r.valid], np.atleast_2d(error).T[r.valid]), axis=1)
+    # print(data.shape)
